@@ -14,7 +14,12 @@ import type { RpcClient } from '../transport/rpc/rpc-client-contract'
 import { useBotDraftImages } from './use-bot-draft-images'
 import { useMobileNativeChatFileAttachments } from '../session/native-chat/composer/attachments/use-mobile-native-chat-file-attachments'
 import { useMobileBotGroupWorkspaceFiles } from './use-mobile-bot-group-workspace-files'
-import { sendsWorkspaceFileToRemote } from './bot-group-workspace-file-guard'
+import { sendsLocalFileToRemote } from './bot-group-remote-file-guard'
+import {
+  readMobileNativeChatDraftInputs,
+  useMobileNativeChatDraftInputs
+} from '../session/native-chat/composer/drafts/mobile-native-chat-draft-inputs'
+import { takeBotGroupSendFiles } from './bot-group-send-files'
 
 /** The group composer's `@` members, the room's faces, who the draft reaches, the one bot that would
  *  answer, and its photos and files, which reach the bots as a chat's do: `@path`s in the words. */
@@ -25,7 +30,9 @@ export function useMobileBotGroupComposer(
   client: RpcClient,
   /** The host takes a post's photos and files; an older one takes text only. */
   takesPhotos: boolean,
-  onError: (message: string) => void
+  onError: (message: string) => void,
+  /** A home path read that failed is read again once the host is back. */
+  connected: boolean
 ) {
   const t = useMobileTranslation()
   const draft = composerDraft.text
@@ -47,7 +54,13 @@ export function useMobileBotGroupComposer(
     enabled: uploadTo !== null,
     showToast: onError
   })
-  const workspace = useMobileBotGroupWorkspaceFiles(uploadTo ? client : null, group, bots)
+  // A file pick or its upload still running, as a chat's Send waits for.
+  const pending = useMobileNativeChatDraftInputs(composerDraft.key, 'pending') ?? 0
+  const workspace = useMobileBotGroupWorkspaceFiles(
+    uploadTo && connected ? client : null,
+    group,
+    bots
+  )
   const draftAudience = group ? botGroupDraftAudience(draft, group, bots) : 'invalid'
   // The one bot that would answer, whose agent the composer's commands follow.
   const recipientId =
@@ -86,37 +99,39 @@ export function useMobileBotGroupComposer(
   const audience = group ? formatBotGroupAudience(draftAudience, group, bots, t) : ''
   /** Opens the photo library; undefined hides the composer's +. */
   const attachPhotos = uploadTo ? () => void photos.attach() : undefined
-  const files = {
-    /** The composer's file chips and + sheet; undefined while the host takes no attachments. */
-    composer: uploadTo
-      ? {
-          files: attached.files,
-          onAttachFiles: () => void attached.attachFiles(),
-          onRemoveFile: (id: string) => attached.removeFiles([id])
-        }
-      : undefined,
-    /** Where `@` finds workspace files, or nothing while that home's path is unknown. */
-    workspace: workspace?.mention ?? {},
-    /** Says why and refuses when `text` hands a workspace path to a bot on a paired computer. */
-    refusesRemote: (text: string) => {
-      const refused =
-        group !== undefined &&
-        sendsWorkspaceFileToRemote(text, group, bots, workspace?.root ?? null)
-      if (refused) {
-        onError(
-          t(
-            'bots.groups.workspaceFileRemote',
-            "Workspace files can't go to bots on other computers. Remove the file, or mention only bots on this computer."
-          )
+  const refusesRemote = (text: string) => {
+    const refused =
+      group !== undefined &&
+      sendsLocalFileToRemote(text, group, bots, {
+        homeRoot: workspace?.root ?? null,
+        uploads: readMobileNativeChatDraftInputs(composerDraft.key).files.length
+      })
+    if (refused) {
+      onError(
+        t(
+          'bots.groups.filesRemote',
+          "Files can't go to bots on other computers. Remove the files, or mention only bots on this computer."
         )
-      }
-      return refused
+      )
+    }
+    return refused
+  }
+  const files = {
+    /** The composer's file chips, + sheet and `@` workspace files (none while that home's path is unknown). */
+    props: {
+      roomFiles: uploadTo
+        ? {
+            files: attached.files,
+            onAttachFiles: () => void attached.attachFiles(),
+            onRemoveFile: (id: string) => attached.removeFiles([id])
+          }
+        : undefined,
+      ...workspace?.mention
     },
-    /** The uploaded files a send carries, which ride as `@path`s as a chat's do. */
-    uploaded: () =>
-      attached.files.flatMap((file) => (file.path ? [{ ...file, path: file.path }] : [])),
-    /** They leave the draft only once the post lands, so a refused send keeps them. */
-    clearSent: (sent: readonly { id: string }[]) => attached.removeFiles(sent.map(({ id }) => id))
+    attaching: pending > 0,
+    /** The files a send of `text` carries, out of the draft; null when it can't go yet, saying why
+     *  when a paired computer's bot would get a file only this computer holds. */
+    take: (text: string) => (refusesRemote(text) ? null : takeBotGroupSendFiles(composerDraft.key))
   }
   return { recipientId, roomMentions, faces, audience, photos, attachPhotos, files }
 }
