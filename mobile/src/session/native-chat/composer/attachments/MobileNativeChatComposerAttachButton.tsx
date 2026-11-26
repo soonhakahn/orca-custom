@@ -10,11 +10,12 @@ import {
   composerInputStyles as inputStyles
 } from '../../../../components/composer-input/composer-input-styles'
 
-/** The composer's + button: the add-to-message sheet in a structured chat, else the photo library. */
+/** The composer's + button: the add-to-message sheet in a structured chat or a room, else the photo library. */
 export function MobileNativeChatComposerAttachButton({
   onAttachImage,
   onAttachFiles,
   structured,
+  room,
   isAttaching,
   disabled,
   menu
@@ -22,6 +23,8 @@ export function MobileNativeChatComposerAttachButton({
   onAttachImage: (() => void) | undefined
   onAttachFiles: (() => void) | undefined
   structured: boolean
+  /** A room's sheet: photos, files and, when it searches one, workspace files; never skills or commands. */
+  room?: { workspaceFiles: boolean }
   isAttaching: boolean
   disabled: boolean
   /** A structured chat's add-to-message sheet; without it the button opens the photo library. */
@@ -34,7 +37,7 @@ export function MobileNativeChatComposerAttachButton({
   const t = useMobileTranslation()
   const [attachOpen, setAttachOpen] = useState(false)
   // A terminal-backed chat has only photos to add, so its + opens the library at once.
-  const sheet = structured ? menu : undefined
+  const sheet = structured || room ? menu : undefined
   const attachPress = sheet ? () => setAttachOpen(true) : onAttachImage
   if (!attachPress) {
     return null
@@ -65,9 +68,9 @@ export function MobileNativeChatComposerAttachButton({
           actions={mobileNativeChatAttachActions({
             onPhotos: onAttachImage,
             onFiles: onAttachFiles,
-            onWorkspaceFile: sheet.openFileMenu,
-            onSkills: () => sheet.openSlashMenu('skill'),
-            onCommands: () => sheet.openSlashMenu('command'),
+            onWorkspaceFile: !room || room.workspaceFiles ? sheet.openFileMenu : undefined,
+            onSkills: room ? undefined : () => sheet.openSlashMenu('skill'),
+            onCommands: room ? undefined : () => sheet.openSlashMenu('command'),
             skillCount: sheet.skillCount
           })}
         />

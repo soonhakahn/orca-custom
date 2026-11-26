@@ -89,8 +89,8 @@ export const MOBILE_WEB_PAGE_ROUTES = [
     grants: ['navigate', 'storage', 'externalLink', 'haptics', 'native.clipboard.write'],
     optionalGrants: [DEVICE_STORE_GRANT]
   },
-  // A group room: Back and its item hops navigate, Copy writes the clipboard, + picks photos and the mic dictates (all three media and audio verbs, as a chat's).
-  // The mic's optional grants match the session's: without native.speech.act the computer transcribes, without native.a11y.announce the page's live region speaks.
+  // A group room: Back and its item hops navigate, Copy writes the clipboard, + picks photos and files and the mic dictates (all three media and audio verbs, as a chat's).
+  // Optional grants match the session's: media.name falls back to the file type, without native.speech.act the computer transcribes, without native.a11y.announce the page's live region speaks.
   {
     pathname: '/h/[hostId]/group/[groupId]',
     grants: [
@@ -108,6 +108,7 @@ export const MOBILE_WEB_PAGE_ROUTES = [
     ],
     optionalGrants: [
       'externalNavigation',
+      'native.media.name',
       'native.image.act',
       'native.speech.act',
       'native.a11y.announce',

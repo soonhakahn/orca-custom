@@ -84,6 +84,7 @@ export function MobileNativeChatComposer({
   placeholder,
   filePaths = NO_FILE_PATHS,
   roomMentions,
+  roomFiles,
   onNeedFiles,
   fileReference,
   skillDiscovery,
@@ -103,7 +104,7 @@ export function MobileNativeChatComposer({
   const [picker, setPicker] = useMobileNativeChatPickerPresentation(
     sessionOptions?.controller.optionPickerRequest
   )
-  const files = structured?.files ?? NO_FILES
+  const files = structured?.files ?? roomFiles?.files ?? NO_FILES
   const onWebPaste = mobileNativeChatComposerPasteHandler({
     disabled: disabled || offline || editSession?.locked === true,
     onPasteImages,
@@ -265,7 +266,11 @@ export function MobileNativeChatComposer({
             images={attachments}
             files={files}
             onRemoveImage={editSession?.locked ? undefined : onRemoveAttachment}
-            onRemoveFile={editSession?.locked ? undefined : structured?.onRemoveFile}
+            onRemoveFile={
+              editSession?.locked
+                ? undefined
+                : (structured?.onRemoveFile ?? roomFiles?.onRemoveFile)
+            }
           />
           <MobileNativeChatComposerField
             ref={fieldRef}
@@ -326,8 +331,9 @@ export function MobileNativeChatComposer({
             >
               <MobileNativeChatComposerAttachButton
                 onAttachImage={onAttachImage}
-                onAttachFiles={structured?.onAttachFiles}
+                onAttachFiles={structured?.onAttachFiles ?? roomFiles?.onAttachFiles}
                 structured={structured !== null}
+                room={roomFiles && { workspaceFiles: onNeedFiles !== undefined }}
                 isAttaching={isAttaching}
                 disabled={disabled || offline}
                 menu={menu}

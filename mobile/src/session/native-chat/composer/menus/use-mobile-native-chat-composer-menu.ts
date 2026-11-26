@@ -48,7 +48,7 @@ export function useMobileNativeChatComposerMenu(input: {
   /** Undefined on a terminal-backed chat. */
   structuredCatalog: MobileComposerStructuredCatalog | undefined
   filePaths: readonly string[]
-  /** Set in a room: `@` lists these members instead of files. */
+  /** Set in a room: `@` lists these members, then any files `onNeedFiles` finds. */
   roomMentions?: readonly ComposerRoomMention[]
   /** Outside a room, `@` lists the chat's host's bots above the files. */
   mentionBots?: MentionBots
@@ -155,7 +155,7 @@ export function useMobileNativeChatComposerMenu(input: {
   const rows = useMemo<ComposerMenuRow[]>(() => {
     if (autocomplete.mode === 'mention' && roomMentions) {
       const members = new Map(roomMentions.map((mention) => [mention.name, mention]))
-      return rankNativeChatRoomMembers([...members.values()], autocomplete.query)
+      const memberRows = rankNativeChatRoomMembers([...members.values()], autocomplete.query)
         .matches.slice(0, MENU_ROWS_PER_GROUP)
         .map(({ name }) => ({
           kind: 'member' as const,
@@ -163,6 +163,7 @@ export function useMobileNativeChatComposerMenu(input: {
           name,
           icon: members.get(name)?.icon
         }))
+      return [...memberRows, ...botMenu.listed(autocomplete, filePaths)]
     }
     if (autocomplete.mode === 'mention') {
       return botMenu.listed(autocomplete, filePaths)
@@ -190,7 +191,7 @@ export function useMobileNativeChatComposerMenu(input: {
   const openedBots = input.mentionBots?.opened
   const botsOpen = mention !== null && !roomMentions
   useEffect(() => openedBots?.(botsOpen), [openedBots, botsOpen])
-  const mentionQuery = mention && !roomMentions ? botMenu.fileQuery(mention) : null
+  const mentionQuery = mention ? botMenu.fileQuery(mention) : null
   useEffect(() => {
     if (mentionQuery !== null) {
       onNeedFiles?.(mentionQuery)

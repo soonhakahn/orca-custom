@@ -6,9 +6,10 @@ import { translate } from '../../../../i18n/mobile-i18n'
 export function mobileNativeChatAttachActions(args: {
   onPhotos: (() => void) | undefined
   onFiles: (() => void) | undefined
-  onWorkspaceFile: () => void
-  onSkills: () => void
-  onCommands: () => void
+  onWorkspaceFile: (() => void) | undefined
+  /** Undefined in a room, which runs no skills or commands. */
+  onSkills: (() => void) | undefined
+  onCommands: (() => void) | undefined
   skillCount: number
 }): ActionSheetAction[] {
   const actions: ActionSheetAction[] = []
@@ -31,15 +32,17 @@ export function mobileNativeChatAttachActions(args: {
       onPress: args.onFiles
     })
   }
-  actions.push(
-    {
+  if (args.onWorkspaceFile) {
+    actions.push({
       id: 'workspaceFile',
       label: translate('session.nativeChatAttachActions.workspaceFile', 'Workspace file'),
       icon: AtSign,
       closeBeforePress: true,
       onPress: args.onWorkspaceFile
-    },
-    {
+    })
+  }
+  if (args.onSkills) {
+    actions.push({
       id: 'skills',
       label: translate('session.nativeChatAttachActions.skills', 'Skills'),
       ...(args.skillCount > 0
@@ -56,14 +59,16 @@ export function mobileNativeChatAttachActions(args: {
       icon: Package,
       closeBeforePress: true,
       onPress: args.onSkills
-    },
-    {
+    })
+  }
+  if (args.onCommands) {
+    actions.push({
       id: 'commands',
       label: translate('session.nativeChatAttachActions.commands', 'Commands'),
       icon: Terminal,
       closeBeforePress: true,
       onPress: args.onCommands
-    }
-  )
+    })
+  }
   return actions
 }

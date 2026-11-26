@@ -5,6 +5,7 @@ import type { NativeChatContextUsageSummary } from '../../../../../src/shared/na
 import type { ComposerRoomMention } from './menus/MobileNativeChatComposerMenu'
 import type { MobileNativeChatSessionOptionPickersProps } from '../input/session-options/MobileNativeChatSessionOptionPickers'
 import type { PendingNativeChatImage } from './attachments/mobile-native-chat-image-attachment'
+import type { PendingNativeChatFile } from './attachments/mobile-native-chat-file-attachment'
 import type { MobilePastedImages } from './attachments/mobile-native-chat-composer-paste'
 import type { MobileNativeChatSendIntent } from './delivery/mobile-native-chat-send'
 import type { MobileNativeChatMicProps } from './dictation/MobileNativeChatComposerMic'
@@ -55,8 +56,14 @@ export type MobileNativeChatComposerProps = MobileNativeChatMicProps & {
   sendDisabled?: boolean
   placeholder?: string
   filePaths?: string[]
-  /** Set in a room: `@` lists these members instead of files. */
+  /** Set in a room: `@` lists these members, then any files `onNeedFiles` finds. */
   roomMentions?: readonly ComposerRoomMention[]
+  /** A room's attached files, which its + sheet adds; a room takes no commands, so it is not `structured`. */
+  roomFiles?: {
+    files: readonly PendingNativeChatFile[]
+    onAttachFiles: () => void
+    onRemoveFile: (id: string) => void
+  }
   onNeedFiles?: (query: string) => void
   /** How a picked file is written when the chat runs in a workspace sub-folder; absent keeps the
    *  workspace-relative default. */
