@@ -6580,6 +6580,7 @@
     },
     "groups": {
       "group": "그룹",
+      "composerPlaceholder": "무엇이든 물어보세요. @로 파일 참조, /로 명령어 실행",
       "peerTold": "{{from}}이(가) {{to}}에게 알림",
       "items": {
         "emptyTitle": "이 그룹의 항목이 아직 없음",

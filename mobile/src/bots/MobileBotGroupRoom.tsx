@@ -41,6 +41,7 @@ import { structuredAgentSessionHostSupport } from '../session/native-chat/agent-
 import type { MobileBotGroupSession } from './MobileBotGroupTurns'
 import type { RpcClient } from '../transport/rpc/rpc-client-contract'
 import { MobileNativeChatSendErrorBanner } from '../session/native-chat/status/MobileNativeChatSendErrorBanner'
+import { nativeChatTextWithFileReferences } from '../session/native-chat/composer/attachments/mobile-native-chat-file-attachment'
 import { useMobileBotGroupDraft } from './use-mobile-bot-group-draft'
 import { MobileNativeChatInputLockStatus } from '../session/native-chat/composer/field/MobileNativeChatInputLockStatus'
 import type { MobileNativeChatHostOutage } from '../session/native-chat/status/mobile-native-chat-host-outage'
@@ -120,7 +121,7 @@ export function MobileBotGroupRoom({
     readers
   } = useMobileBotGroupTranscript(client, groupId, threadId, hostId, visible && connected, setError)
   const group = data?.group
-  const { recipientId, roomMentions, faces, audience, photos, attachPhotos } =
+  const { recipientId, roomMentions, faces, audience, photos, attachPhotos, files } =
     useMobileBotGroupComposer(
       group,
       bots,
@@ -278,7 +279,7 @@ export function MobileBotGroupRoom({
             agent={readers.find((turn) => turn.sessionId === selectedMember?.sessionId)?.agent}
             placeholder={t(
               'bots.groups.composerPlaceholder',
-              'Message the group, @ to mention a bot'
+              'Message the group, @ to mention bots or files'
             )}
             disabled={!connected}
             onAttachImage={attachPhotos}
@@ -286,6 +287,8 @@ export function MobileBotGroupRoom({
             onRemoveAttachment={photos.remove}
             isAttaching={photos.uploading}
             roomMentions={roomMentions}
+            roomFiles={files.composer}
+            {...files.workspace}
             roomReplies={
               // The row's free width, so a long name truncates on the +'s line instead of wrapping.
               <View style={styles.repliesSlot}>
@@ -311,6 +314,7 @@ export function MobileBotGroupRoom({
               composerDraft.clearForSend(text)
               const sent = photos.images
               photos.clearSent(sent.map((image) => image.id))
+              const sentFiles = files.uploaded()
               try {
                 const result = groupSend.interpret(
                   await groupSend.request(client, {
@@ -318,10 +322,11 @@ export function MobileBotGroupRoom({
                     revision: group.revision,
                     threadId,
                     messageId: randomV4Uuid(),
-                    text,
+                    text: nativeChatTextWithFileReferences(text, sentFiles),
                     ...(sent.length > 0 ? { images: sent.map((image) => image.path) } : {})
                   })
                 )
+                files.clearSent(sentFiles)
                 apply({ kind: 'sent', message: result.message })
                 setError(null)
                 return true
