@@ -77,6 +77,9 @@ export function useMobileNativeChatOrcaCommands(input: {
       return false
     }
     const command = name(match[1]!)
+    if (catalog.commandAvailable?.(command) === false) {
+      return false
+    }
     const rest = match[2]?.trim() ?? ''
     if (isMobileDesktopOnlyCommand(command, catalog)) {
       return notice(mobileDesktopOnlyCommandNotice())

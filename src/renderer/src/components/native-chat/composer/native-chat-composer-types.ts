@@ -44,6 +44,9 @@ export type NativeChatComposerRoom = {
   mentions: readonly NativeChatRoomMention[]
   placeholder: string
   withFiles?: true
+  /** How a picked workspace file is written; absent keeps the workspace-relative `@path`. A group
+   *  writes the file's path on its host, since each member runs in its own home. */
+  fileReference?: (path: string) => string
 }
 
 export type NativeChatComposerProps = {

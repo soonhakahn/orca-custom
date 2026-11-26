@@ -1,3 +1,4 @@
+import type { AgentJournalSkillRef } from '../../../../../../shared/agent-session/journal/agent-session-journal-types'
 import type { NativeChatMcpTrayState } from '@/components/native-chat/mcp/use-native-chat-mcp-tray'
 import type { CaptureStructuredAgentSessionPresentation } from '../../session/structured/writes/use-structured-agent-session-mutate'
 import type { AgentSessionConversationCommand } from '../../../../../../shared/agent-session/conversation-context/agent-session-conversation-command'
@@ -19,6 +20,8 @@ import type { NativeChatComposerErrorDetail } from '../controls/native-chat-comp
 import type { NativeChatSideChat } from '../../messages/actions/use-native-chat-side-chat'
 
 export type NativeChatStructuredComposerTransport = {
+  commandAvailable?: (name: string) => boolean
+  skillsDisabled?: boolean
   capturePresentation: CaptureStructuredAgentSessionPresentation
   conversationCommands?: readonly AgentSessionConversationCommand[]
   compactInstructions?: boolean
@@ -36,7 +39,11 @@ export type NativeChatStructuredComposerTransport = {
   /** `onSent` fires once a conversation command leaves for the host, before its reply. */
   dispatchCommand: (
     text: string,
-    onSent?: () => void
+    onSent?: () => void,
+    input?: {
+      skills: readonly AgentJournalSkillRef[]
+      hasAttachments: boolean
+    }
   ) => Promise<StructuredAgentSessionCommandOutcome>
   optionsSurface: SessionOptionsSurface
   optionSnapshot: SessionOptionDescriptor[]

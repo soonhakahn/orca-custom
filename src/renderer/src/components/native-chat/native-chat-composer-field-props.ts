@@ -1,3 +1,4 @@
+import type { NativeChatAddMenu } from './composer/controls/NativeChatAttachButton'
 import type { NativeChatComposerInput } from './composer/editor/native-chat-composer-input'
 import type { useImeEnterGestureOwnership } from '@/lib/text-input/ime/ime-composition-keyboard-event'
 import type { ComposerAutocomplete } from '../../../../shared/native-chat/input/composer/native-chat-composer-autocomplete'
@@ -17,6 +18,7 @@ import type { NativeChatComposerImageAttachment } from './attachments/chips/nati
 import type { NativeChatOptionPickerRequest } from './session/options/controls/native-chat-option-picker-request'
 
 export type NativeChatComposerFieldProps = {
+  addMenu?: NativeChatAddMenu
   dock?: React.ReactNode
   editSession?: { cancel: () => void }
   /** Own draft persistence and native-drop routing by this pane so drops cannot land in another composer. */

@@ -8,6 +8,7 @@ import {
 } from '../../shared/bots/bot-group'
 import { botGroupAudience } from '../../shared/bots/bot-group-mentions'
 import { BOT_GROUP_THREAD_TITLE_MAX_LENGTH } from '../../shared/bots/bot-group-schema'
+import { validateBotGroupSend, sameBotGroupSendPayload } from './bot-group-send-validation'
 import { stripSentImagePromptMarkers } from '../../shared/native-chat/transcript/images/native-chat-sent-image-prompt-markers'
 import { runKeyedSerializedOperation } from '../../shared/concurrency/keyed-serialized-operations'
 import { sendAgentTurn } from '../runtime/orchestration/turn-delivery/send-agent-turn'
@@ -47,7 +48,8 @@ export async function sendBotGroupMessage(
         existing.groupId !== input.groupId ||
         existing.threadId !== input.threadId ||
         existing.text !== input.text ||
-        (existing.images?.length ?? 0) !== (input.images?.length ?? 0)
+        (existing.images?.length ?? 0) !== (input.images?.length ?? 0) ||
+        !sameBotGroupSendPayload(existing, input)
       ) {
         throw new BotFailureError('groupMessageIdReused')
       }
@@ -60,16 +62,15 @@ export async function sendBotGroupMessage(
     if (group.members.length === 0) {
       throw new BotFailureError('groupEmptyBeforeSend')
     }
-    const bots = requireGroupBots(
-      groups,
-      group.members.map((member) => member.botId)
-    )
+    const memberIds = group.members.map(({ botId }) => botId)
+    const bots = requireGroupBots(groups, memberIds)
     const requestedImages = input.images ?? []
     const audience = botGroupAudience(
       stripSentImagePromptMarkers(input.text, requestedImages.length),
       group,
       bots
     )
+    validateBotGroupSend(input, group, bots, audience)
     if (requestedImages.length > 0 || hasAttachmentStoreReference(input.text)) {
       await groups.runtime.ensureStructuredAgentSessionHost().catch(() => undefined)
     }
@@ -106,6 +107,8 @@ export async function sendBotGroupMessage(
         author: { kind: 'owner' },
         text: input.text,
         ...(images.length > 0 ? { images } : {}),
+        ...(input.skills ? { skills: input.skills } : {}),
+        ...(input.command ? { command: true as const } : {}),
         createdAt: Date.now(),
         turns,
         ...(remote ? { remoteAsks: remote.asks } : {})

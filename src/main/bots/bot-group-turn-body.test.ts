@@ -119,3 +119,82 @@ describe("a room turn on an event's or an item's words never reads as the owner'
     expect(ownerLines(turnOn(handoff, own)).map(({ by }) => by)).toEqual(['owner', 'bot'])
   })
 })
+
+describe('a group post as one agent command', () => {
+  const turn: BotGroupMessage['turns'][number] = {
+    operationId: 'op-1',
+    botId: 'bot-1',
+    botName: 'Forge',
+    avatar: null,
+    agent: 'claude',
+    sessionId: 's-1'
+  }
+  const post = (text: string, fields: Partial<BotGroupMessage> = {}) =>
+    line({ text, turns: [turn], ...fields })
+  const sent = (message: BotGroupMessage) => turnOn(message, message).blocks[0]
+
+  it('reaches its one member as that member’s own message, its skills with it', () => {
+    const skills = [{ name: 'review', path: '/home/forge/.claude/skills/review/SKILL.md' }]
+    expect(sent(post('@Forge /review the diff', { command: true }))).toEqual({
+      type: 'text',
+      text: '/review the diff'
+    })
+    expect(
+      turnOn(post('/review', { command: true }), post('/review', { command: true })).blocks[0]
+    ).toEqual({
+      type: 'text',
+      text: '/review'
+    })
+    expect(turnOn(post('/review', { skills }), post('/review', { skills })).skills).toEqual(skills)
+  })
+
+  it('tells a wrapped turn which skills the person picked, by the file each loads from', () => {
+    const skills = [{ name: 'review', path: '/home/forge/.codex/skills/review/SKILL.md' }]
+    const two = post('Use $review on this', {
+      skills,
+      turns: [turn, { ...turn, botId: 'bot-2', sessionId: 's-2' }]
+    })
+    const body = turnOn(two, two)
+    expect(body.skills).toEqual(skills)
+    expect(body.blocks[0]).toMatchObject({
+      text: expect.stringContaining(
+        '[Orca: they picked a skill for this; load each from its file and follow it: review "/home/forge/.codex/skills/review/SKILL.md"]'
+      )
+    })
+  })
+
+  it('stays inside the room for paths, several members, remote asks and hand-offs', () => {
+    const wrapped = (message: BotGroupMessage) =>
+      expect(sent(message)).toMatchObject({
+        text: expect.stringContaining('<quoted_room_history>')
+      })
+    wrapped(post('/Users/me/a.txt what is this?'))
+    wrapped(post('please /review it'))
+    wrapped(post('/review'))
+    wrapped(post('/review', { turns: [turn, { ...turn, botId: 'bot-2', sessionId: 's-2' }] }))
+    wrapped(
+      post('/review', {
+        remoteAsks: [
+          {
+            environmentId: 'studio',
+            botId: 'helper',
+            chatSessionId: 'chat-1',
+            computer: 'Studio Mac',
+            joinedAfter: 0,
+            name: 'Helper',
+            avatar: null,
+            agent: 'codex',
+            requestId: 'r-1',
+            state: 'sent'
+          }
+        ]
+      })
+    )
+    expect(turnOn(handoff, post('/review')).blocks[0]).toMatchObject({
+      text: expect.stringContaining('<quoted_room_history>')
+    })
+    expect(turnOn(handoff, post('/review', { command: true })).blocks[0]).toMatchObject({
+      text: expect.stringContaining('<quoted_room_history>')
+    })
+  })
+})

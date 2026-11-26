@@ -5800,8 +5800,8 @@
       "removingDefault": "Removing {{name}} changes Replies to Only when mentioned.",
       "loadEarlierMessages": "Load earlier messages",
       "memberRemoved": "Member removed",
-      "composerPlaceholder": "Message the group, @ to mention bots or files",
-      "filesRemote": "Files can't go to bots on other computers. Remove the files, or mention only bots on this computer.",
+      "composerPlaceholder": "Ask anything, @ to mention files, / for commands",
+      "filesRemote": "Files and skills can't go to bots on other computers. Remove them, or mention only bots on this computer.",
       "repliesValue": "Replies: {{value0}}",
       "whoAnswers": "Who answers your messages",
       "peerAsked": "{{from}} asked {{to}}",
@@ -5865,7 +5865,9 @@
       "membersHere": "{{names}} are here.",
       "starting": "Starting…",
       "peerReadReplyFrom": "{{reader}} read the reply from {{peer}}",
-      "stopValue": "Stop {{value0}}"
+      "stopValue": "Stop {{value0}}",
+      "commandRan": "Ran {{command}} in {{bot}}’s room session.",
+      "commandsInSessions": "Commands need exactly one bot on this computer and an up-to-date host. Use the bot’s chat for other commands."
     },
     "templates": {
       "title": "Bot templates",

@@ -32,7 +32,10 @@ export async function dispatchNativeChatStructuredComposerText(
   // A sent command releases the draft now, as a pending message does; a refusal hands it back.
   const { handled, ...command } = pickedModeSkill
     ? { handled: false, accepted: false, error: null }
-    : await transport.dispatchCommand(prompt, onPending)
+    : await transport.dispatchCommand(prompt, onPending, {
+        skills,
+        hasAttachments: attachments.length > 0 || intent.prepareAttachments !== undefined
+      })
   // Commands already reveal at keypress; messages reveal unless admitted as queued cards.
   if (handled) {
     return { ...command, revealsTranscript: false }

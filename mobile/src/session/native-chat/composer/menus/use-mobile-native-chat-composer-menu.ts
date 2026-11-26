@@ -23,6 +23,8 @@ import {
   MENU_ROWS_PER_GROUP,
   mobileComposerCatalog,
   mobileComposerSkillTokens,
+  mobileComposerMenuTrigger,
+  mobileComposerSlashMenuDraft,
   type MobileComposerStructuredCatalog
 } from './mobile-native-chat-composer-menu'
 import {
@@ -30,13 +32,11 @@ import {
   type ComposerMenuRow,
   type ComposerRoomMention
 } from './MobileNativeChatComposerMenu'
-import type { SlashCommandSuggestion } from '../../../../../../src/shared/native-chat/input/commands/native-chat-slash-commands'
 import { rankNativeChatRoomMembers } from '../../../../../../src/shared/native-chat/input/native-chat-room-mentions'
 import { useBotMentionField } from './mobile-native-chat-bot-mention-display'
 import { useMobileNativeChatMentionBotMenu } from './use-mobile-native-chat-mention-bot-menu'
 import type { MentionBots } from './use-mobile-native-chat-mention-bots'
 
-const NO_COMMANDS: readonly SlashCommandSuggestion[] = []
 /** Opening the menu from the + sheet narrows it to what that row named. */
 type MenuKind = 'skill' | 'command'
 
@@ -139,7 +139,7 @@ export function useMobileNativeChatComposerMenu(input: {
       deriveComposerAutocomplete(
         beforeCaret,
         beforeCaret.length,
-        input.skillsOnly ? NO_COMMANDS : catalog.commands,
+        input.skillsOnly ? [] : catalog.commands,
         catalog.discovery.skills,
         catalog.profile,
         catalog.discovery,
@@ -290,18 +290,17 @@ export function useMobileNativeChatComposerMenu(input: {
   }
 
   const openSlashMenu = (kind: MenuKind): void => {
-    const rest = (skillToken ? value.slice(skillToken.length + 1) : value).trimStart()
-    onChangeText(rest ? `/ ${rest}` : '/')
-    setMenuKind(kind)
-    placeCaret(1)
+    const next = mobileComposerSlashMenuDraft(value, cursor, !!roomMentions, skillToken)
+    onChangeText(next.draft)
+    placeCaret(next.caret)
     input.focusField()
+    setMenuKind(kind)
   }
 
-  const openFileMenu = (): void => {
-    const before = value.slice(0, cursor)
-    const lead = before.length === 0 || /\s$/.test(before) ? '@' : ' @'
-    setDraft(before + lead + value.slice(cursor))
-    placeCaret(before.length + lead.length)
+  const openFileMenu = (prefix = '@'): void => {
+    const next = mobileComposerMenuTrigger(value, cursor, prefix)
+    setDraft(next.draft)
+    placeCaret(next.caret)
     input.focusField()
   }
 
@@ -312,7 +311,7 @@ export function useMobileNativeChatComposerMenu(input: {
     rows,
     pick,
     openSlashMenu,
-    openFileMenu,
+    openFileMenu: () => openFileMenu(),
     openBotChats: (row: Extract<ComposerMenuRow, { kind: 'bot' }>) => {
       botMenu.openChats(row, mention)
       input.focusField()

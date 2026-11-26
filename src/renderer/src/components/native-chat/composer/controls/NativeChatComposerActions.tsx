@@ -21,7 +21,7 @@ import { NativeChatSessionOptionPickers } from '../../session/options/controls/N
 import { NativeChatComposerPermissionPicker } from '../../session/options/controls/NativeChatPermissionModePicker'
 import { NativeChatComposerGoalChip } from './NativeChatComposerGoalChip'
 import { NativeChatComposerPrimaryButton } from './NativeChatComposerPrimaryButton'
-import { NativeChatAttachButton } from './NativeChatAttachButton'
+import { NativeChatAttachButton, type NativeChatAddMenu } from './NativeChatAttachButton'
 import { NativeChatDictationButton } from './NativeChatDictationButton'
 import { NativeChatContextUsageRing } from '../../usage/NativeChatContextUsageRing'
 import type { NativeChatContextUsageSummary } from '../../../../../../shared/native-chat/native-chat-context-usage-summary'
@@ -29,6 +29,7 @@ import type { NativeChatOptionPickerRequest } from '../../session/options/contro
 import type { NativeChatSteerChordPreview } from '../../../../../../shared/native-chat/input/composer/use-native-chat-steer-chord-preview'
 
 export type NativeChatComposerActionsProps = {
+  addMenu?: NativeChatAddMenu
   editSession?: { cancel: () => void }
   attachDisabled: boolean
   dictationDisabled: boolean
@@ -71,6 +72,7 @@ export type NativeChatComposerActionsProps = {
 
 // Memoized: typing re-renders the composer per keystroke, and these controls rarely change with it.
 export const NativeChatComposerActions = memo(function NativeChatComposerActions({
+  addMenu,
   editSession,
   attachDisabled,
   dictationDisabled,
@@ -175,7 +177,9 @@ export const NativeChatComposerActions = memo(function NativeChatComposerActions
     </NativeChatComposerPrimaryButton>
   )
 
-  const attach = <NativeChatAttachButton disabled={attachDisabled} onAttach={onAttach} />
+  const attach = (
+    <NativeChatAttachButton disabled={attachDisabled} onAttach={onAttach} menu={addMenu} />
+  )
   const dictation = (
     <NativeChatDictationButton
       disabled={dictationDisabled}

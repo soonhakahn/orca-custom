@@ -188,7 +188,7 @@ export function useNativeChatComposerMentions(
         recordNativeChatRecentMention(member.recentKey ?? member.name)
       }
       // Back from a bot's chats, the pick replaces the `@` and the filter typed after it.
-      const picked = member ? (token ?? `@${member.name}`) : undefined
+      const picked = member ? (token ?? `@${member.name}`) : room?.fileReference?.(value)
       if (drill.parent) {
         completeMention(value, picked, drill.parent.from)
       } else {

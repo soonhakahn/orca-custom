@@ -79,7 +79,7 @@ export function useNativeChatResumeCommand(args: {
   structuredTransport:
     | Pick<
         NativeChatStructuredComposerTransport,
-        'worktreeId' | 'accountUsage' | 'fork' | 'mcpPanel'
+        'worktreeId' | 'accountUsage' | 'fork' | 'mcpPanel' | 'commandAvailable'
       >
     | undefined
   agent: AgentType
@@ -206,13 +206,14 @@ export function useNativeChatResumeCommand(args: {
   const matchesDraft = useCallback(
     (draft: string): boolean =>
       structured &&
+      (structuredTransport?.commandAvailable?.(draft.slice(1).split(/\s/u)[0]) ?? true) &&
       !isPickedSkill(draft) &&
       (parseNativeChatResumeDraft(draft) !== null ||
         (usage !== undefined && /^\/usage\s*$/i.test(draft)) ||
         // Before goal mode too, so `/mcp` never becomes an objective.
         (mcp !== undefined && MCP_DRAFT.test(draft)) ||
         (fork !== undefined && FORK_DRAFT.test(draft.trim()))),
-    [fork, isPickedSkill, mcp, structured, usage]
+    [fork, isPickedSkill, mcp, structured, usage, structuredTransport]
   )
   const consume = useCallback(
     (draft: string): boolean => {

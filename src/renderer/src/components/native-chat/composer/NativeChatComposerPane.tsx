@@ -1,3 +1,4 @@
+import { useNativeChatComposerAddMenu } from './pickers/use-native-chat-composer-add-menu'
 import { useNativeChatComposerEditSession } from '../queue/editing/use-native-chat-composer-edit-session'
 import { useNativeChatComposerNotice } from './controls/use-native-chat-composer-notice'
 import { useNativeChatMobileHoldNotice } from '../host-access/use-native-chat-mobile-hold-notice'
@@ -76,14 +77,7 @@ export const NativeChatComposerPane = forwardRef<ComposerHandle, C.NativeChatCom
     const draftState = useNativeChatDraft(draftScopeKey, imeEnterGesture.isComposing)
     const { draft, setDraft, flushDraftAppends } = draftState
     const [caret, setCaret] = useState(draft.length)
-    useNativeChatLaunchDraftAdoption({
-      terminalTabId,
-      agent,
-      launchSeed,
-      draft,
-      setDraft,
-      setCaret
-    })
+    useNativeChatLaunchDraftAdoption({ terminalTabId, agent, launchSeed, ...draftState, setCaret })
     const [activeSuggestion, setActiveSuggestion] = useState(0)
     const holdNotice = useNativeChatMobileHoldNotice(
       structuredTransport ? null : targetPtyId,
@@ -111,6 +105,7 @@ export const NativeChatComposerPane = forwardRef<ComposerHandle, C.NativeChatCom
       disabled ||
       (structuredTransport?.runtime === 'remote' && structuredTransport.sessionPending === true)
 
+    const editor = { textareaRef, setDraft, setCaret, setActiveSuggestion }
     const { picker, orcaCommands, sideChat } = useNativeChatComposerCommandPicker({
       mode: editSession ? 'edit' : launchPrompt || pending ? 'launch' : undefined,
       agent,
@@ -123,7 +118,7 @@ export const NativeChatComposerPane = forwardRef<ComposerHandle, C.NativeChatCom
       isComposing: imeEnterGesture.isComposing,
       room,
       structuredTransport,
-      editor: { textareaRef, setDraft, setCaret, setActiveSuggestion },
+      editor,
       setNotice
     })
     const { classifySend, clearSkillOrigin, completeItem, dismiss, handleDraftOrCaretChange } =
@@ -134,8 +129,6 @@ export const NativeChatComposerPane = forwardRef<ComposerHandle, C.NativeChatCom
       caret,
       notices
     })
-    const { autocomplete } = mentions
-
     const resolveTarget = useCallback(
       () => (targetPtyId ? { ptyId: targetPtyId } : null),
       [targetPtyId]
@@ -169,6 +162,16 @@ export const NativeChatComposerPane = forwardRef<ComposerHandle, C.NativeChatCom
       attachResolvedPaths,
       pendingChips: attachments.pendingChips,
       setNotice
+    })
+
+    const { autocomplete, addMenu } = useNativeChatComposerAddMenu({
+      room,
+      draft,
+      autocomplete: mentions.autocomplete,
+      skills: !structuredTransport?.skillsDisabled,
+      commands: structuredTransport?.commandAvailable?.('model') === true,
+      ...editor,
+      captureFiles: fileDrops.captureExternalPaths
     })
 
     const localHandle = useRef<C.NativeChatComposerHandle>(null)
@@ -399,6 +402,7 @@ export const NativeChatComposerPane = forwardRef<ComposerHandle, C.NativeChatCom
             onChooseMentionFile={mentions.chooseMention}
             onRemoveImageAttachment={attachments.removeImageAttachment}
             onAttach={fileDrops.pickAttachments}
+            addMenu={addMenu}
             onSend={send}
             steerPreview={steerChord.preview}
             onSteerPreview={steerChord.runPreview}

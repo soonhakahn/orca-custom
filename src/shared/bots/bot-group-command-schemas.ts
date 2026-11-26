@@ -7,6 +7,7 @@ import {
   BotGroupReplyMode
 } from './bot-group-schema'
 import { lazyZodSchema } from '../schema/lazy-zod-schema'
+import * as sendParams from '../rpc-contract/structured-agent-session/structured-agent-session-message-params'
 
 const GroupId = lazyZodSchema(() => z.object({ groupId: z.string().min(1) }))
 /** A room in the group: one of its threads, or the original room when absent. */
@@ -49,7 +50,10 @@ export const BotGroupSend = lazyZodSchema(() =>
     images: z
       .array(z.string().min(1).max(4096))
       .max(AGENT_SESSION_MESSAGE_IMAGE_MAX_COUNT, 'Group messages take up to 20 images.')
-      .optional()
+      .optional(),
+    /** Sent only to a host advertising `BOTS_GROUP_COMMANDS_RUNTIME_CAPABILITY`. */
+    skills: z.array(sendParams.SendSkillRef).min(1).max(sendParams.MAX_SKILL_REFS).optional(),
+    command: z.literal(true).optional()
   }).refine(
     (value) => value.text.length > 0 || (value.images?.length ?? 0) > 0,
     'Message text or image is required.'

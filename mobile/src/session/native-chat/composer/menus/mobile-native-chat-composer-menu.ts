@@ -35,6 +35,7 @@ import { translate } from '../../../../i18n/mobile-i18n'
 export const MENU_ROWS_PER_GROUP = 10
 
 export type MobileComposerStructuredCatalog = {
+  commandAvailable?: (name: string) => boolean
   /** What the session reported for its `/` menu; undefined until read or on an older host. */
   reported: readonly AgentSessionSlashCommand[] | undefined
   conversationCommands: readonly AgentSessionConversationCommand[]
@@ -56,6 +57,25 @@ export type MobileComposerCatalog = {
 }
 
 const NO_DISCOVERY: NativeChatSkillDiscoverySnapshot = { status: 'ready', skills: [] }
+
+export function mobileComposerMenuTrigger(value: string, cursor: number, prefix: string) {
+  const before = value.slice(0, cursor)
+  const lead = before.length === 0 || /\s$/.test(before) ? prefix : ` ${prefix}`
+  return { draft: before + lead + value.slice(cursor), caret: before.length + lead.length }
+}
+
+export function mobileComposerSlashMenuDraft(
+  value: string,
+  cursor: number,
+  room: boolean,
+  skillToken: string | null
+) {
+  if (room) {
+    return mobileComposerMenuTrigger(value, cursor, '/')
+  }
+  const rest = (skillToken ? value.slice(skillToken.length + 1) : value).trimStart()
+  return { draft: rest ? `/ ${rest}` : '/', caret: 1 }
+}
 
 // Structured chats use reported commands/skills; terminal-backed chats keep curated commands.
 export function mobileComposerCatalog({
@@ -88,7 +108,9 @@ export function mobileComposerCatalog({
     : getAgentAnsweredNativeChatCommands(agent)
   return {
     profile: getNativeChatAgentProfile(agent),
-    commands: nativeChatPickerCommands(agent, commands, discovery.skills),
+    commands: nativeChatPickerCommands(agent, commands, discovery.skills).filter(
+      (command) => structured?.commandAvailable?.(command.name) ?? true
+    ),
     discovery,
     sessionSkills: nativeChatSessionSkills(agent, reported)
   }

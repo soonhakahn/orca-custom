@@ -28380,6 +28380,8 @@
       "lookingShort": "둘러보는 중"
     },
     "groups": {
+      "composerPlaceholder": "무엇이든 물어보세요. @로 파일 참조, /로 명령어 실행",
+      "filesRemote": "파일과 스킬은 다른 컴퓨터의 봇에게 보낼 수 없습니다. 빼거나 이 컴퓨터의 봇만 멘션하세요.",
       "newGroup": "새 그룹",
       "peerReadItems": "{{bot}}이(가) 자기 항목의 업데이트를 읽음",
       "handoffsPaused": "인계 {{count}}회 후 일시 중지되었습니다. 계속하려면 답장하세요.",
@@ -28399,7 +28401,14 @@
       "remoteShortened": "답변이 축약되었습니다. 전체 답변은 {{computer}}에 있습니다.",
       "deliveryUnconfirmed": "전달 미확인",
       "starting": "시작 중…",
-      "notStarted": "시작하지 않음"
+      "notStarted": "시작하지 않음",
+      "commandRan": "{{bot}}의 그룹 대화 세션에서 {{command}} 명령어를 실행했습니다.",
+      "commandsInSessions": "명령어는 최신 호스트의 로컬 봇 한 명에게만 실행할 수 있습니다. 다른 명령어는 봇의 개별 대화에서 실행하세요.",
+      "addPhotos": "사진",
+      "addFiles": "파일(PDF·텍스트·코드)",
+      "addWorkspaceFiles": "워크스페이스 파일",
+      "addSkills": "스킬",
+      "addCommands": "명령어"
     },
     "import": {
       "nudgeOne": "{{app}}에서 봇을 찾았습니다.",

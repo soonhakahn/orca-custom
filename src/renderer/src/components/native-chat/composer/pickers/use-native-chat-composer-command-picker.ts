@@ -64,12 +64,15 @@ export function useNativeChatComposerCommandPicker(
     [agent, reported, hostSetsGoals, hostSetsInteractionMode, opensMcpPanel]
   )
   const commandAvailable = useCallback(
-    (name: string) => mode === undefined || acceptsText(`/${name}`),
-    [mode, acceptsText]
+    (name: string) =>
+      (structuredTransport?.commandAvailable?.(name) ?? true) &&
+      (mode === undefined || acceptsText(`/${name}`)),
+    [mode, acceptsText, structuredTransport]
   )
   const listed = useNativeChatPickerState({
     ...pickerArgs,
-    ...(mode === 'launch' ? { launchWorktreeId: structuredTransport?.worktreeId } : {}),
+    launchWorktreeId: structuredTransport?.worktreeId,
+    skillsDisabled: structuredTransport?.skillsDisabled,
     ...editor,
     agentCommands,
     commandAvailable,

@@ -23,6 +23,7 @@ function noop(): void {}
 export type { NativeChatComposerFieldProps } from '../../native-chat-composer-field-props'
 
 export function NativeChatComposerField({
+  addMenu,
   editSession,
   draftScopeKey,
   positionTarget,
@@ -313,6 +314,7 @@ export function NativeChatComposerField({
               )}
             >
               <NativeChatComposerActions
+                addMenu={addMenu}
                 editSession={editSession}
                 attachDisabled={attachDisabled}
                 dictationDisabled={dictationDisabled}

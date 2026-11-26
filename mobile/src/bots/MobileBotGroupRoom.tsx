@@ -15,8 +15,10 @@ import { NavBar } from '../components/nav-bar/NavBar'
 import { NavBarButton } from '../components/nav-bar/NavBarButton'
 import {
   BOTS_GROUP_ATTACHMENTS_RUNTIME_CAPABILITY,
+  BOTS_GROUP_COMMANDS_RUNTIME_CAPABILITY,
   BOTS_ITEMS_RUNTIME_CAPABILITY
 } from '../../../src/shared/bot-runtime-capabilities'
+import { SKILL_DISCOVER_WORKSPACE_CAPABILITY } from '../../../src/shared/skills/capabilities/skill-install-capability'
 import { MobileBotGroupItems } from './MobileBotGroupItems'
 import { MobileBotGroupRepliesSheet } from './MobileBotGroupRepliesSheet'
 import { MobileBotGroupApprovalDock } from './MobileBotGroupApprovalDock'
@@ -25,11 +27,10 @@ import { useMobileBotGroupComposer } from './use-mobile-bot-group-composer'
 import { MobileBotGroupDeleteConfirm } from './MobileBotGroupDeleteConfirm'
 import { botGroupMenuActions } from './bot-group-menu-actions'
 import { botGroupRoomOrder } from '../../../src/shared/bots/bot-group-room-order'
-import { groupNewThread, groupSend, groupStop } from './bot-group-operations'
+import { groupNewThread, groupStop } from './bot-group-operations'
 import { MobileBotGroupRoomBar } from './MobileBotGroupRoomBar'
 import { MobileBotFaceStack } from './MobileBotFaceStack'
 import { useMobileBotGroupTranscript } from './use-mobile-bot-group-transcript'
-import { randomV4Uuid } from '../platform/random-v4-uuid'
 import { groupStyles as styles } from './mobile-bot-group-styles'
 import { MobileBotGroupMembers } from './MobileBotGroupMembers'
 import { MobileBotGroupPost } from './MobileBotGroupPost'
@@ -90,6 +91,7 @@ export function MobileBotGroupRoom({
   const composerDraft = useMobileBotGroupDraft(hostId, groupId, roomId)
   const { text: draft, edit: setDraft } = composerDraft
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [menu, setMenu] = useState<'actions' | 'members' | 'replies' | 'delete' | null>(null)
   const [startingThread, setStartingThread] = useState(false)
   const [itemsOpen, setItemsOpen] = useState(false)
@@ -120,7 +122,7 @@ export function MobileBotGroupRoom({
     readers
   } = useMobileBotGroupTranscript(client, groupId, threadId, hostId, visible && connected, setError)
   const group = data?.group
-  const { recipientId, roomMentions, faces, audience, photos, attachPhotos, files } =
+  const { roomMentions, faces, audience, photos, attachPhotos, files, send } =
     useMobileBotGroupComposer(
       group,
       bots,
@@ -128,7 +130,14 @@ export function MobileBotGroupRoom({
       client,
       hostCapabilities?.includes(BOTS_GROUP_ATTACHMENTS_RUNTIME_CAPABILITY) === true,
       setError,
-      connected
+      connected,
+      {
+        id: hostId,
+        runsCommands: hostCapabilities?.includes(BOTS_GROUP_COMMANDS_RUNTIME_CAPABILITY) === true,
+        discoversSkills: hostCapabilities?.includes(SKILL_DISCOVER_WORKSPACE_CAPABILITY) === true
+      },
+      sessions,
+      setNotice
     )
   const dictation = useMobileBotGroupDictation({
     client,
@@ -139,7 +148,6 @@ export function MobileBotGroupRoom({
     title: anyRoomGroup?.name ?? '',
     draft: composerDraft
   })
-  const selectedMember = group?.members.find((member) => member.botId === recipientId)
   const stop = async (botId?: string) => {
     try {
       const result = groupStop.interpret(
@@ -267,6 +275,7 @@ export function MobileBotGroupRoom({
           hostOutage={outage}
         />
         <MobileNativeChatSendErrorBanner message={error} onDismiss={() => setError(null)} />
+        {notice ? <Text style={styles.notice}>{notice}</Text> : null}
         <MobileBotGroupDictationScope dictation={dictation} client={client}>
           <MobileNativeChatComposer
             {...dictation.mic}
@@ -276,10 +285,9 @@ export function MobileBotGroupRoom({
             sendSurfaceId={`group:${roomId}`}
             getSendCompletionGeneration={() => 0}
             getComposerEditGeneration={composerDraft.getEditGeneration}
-            agent={readers.find((turn) => turn.sessionId === selectedMember?.sessionId)?.agent}
             placeholder={t(
               'bots.groups.composerPlaceholder',
-              'Message the group, @ to mention bots or files'
+              'Ask anything, @ to mention files, / for commands'
             )}
             disabled={!connected}
             onAttachImage={attachPhotos}
@@ -306,36 +314,15 @@ export function MobileBotGroupRoom({
               </View>
             }
             stop={workingCount > 0 ? { held: false, onStop: () => void stop() } : null}
-            onSend={async (text) => {
-              const sentFiles = group ? files.take(text) : null
-              if (!group || !sentFiles) {
-                return false
-              }
-              composerDraft.clearForSend(text)
-              const sent = photos.images
-              photos.clearSent(sent.map((image) => image.id))
-              try {
-                const result = groupSend.interpret(
-                  await groupSend.request(client, {
-                    groupId,
-                    revision: group.revision,
-                    threadId,
-                    messageId: randomV4Uuid(),
-                    text: sentFiles.text(text),
-                    ...(sent.length > 0 ? { images: sent.map((image) => image.path) } : {})
-                  })
-                )
-                apply({ kind: 'sent', message: result.message })
-                setError(null)
-                return true
-              } catch (error) {
-                composerDraft.restoreRefused(text)
-                photos.returnRefused(sent)
-                sentFiles.restore()
-                setError(botFailureMessage(error) ?? String(error))
-                return false
-              }
-            }}
+            onSend={(text) =>
+              send(text, {
+                threadId,
+                apply: (message) => {
+                  apply({ kind: 'sent', message })
+                  setError(null)
+                }
+              })
+            }
           />
         </MobileBotGroupDictationScope>
       </MobileNativeChatComposerMenuHost>

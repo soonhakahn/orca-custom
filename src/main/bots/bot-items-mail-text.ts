@@ -164,8 +164,9 @@ function skippedNote(skipped: unknown): string {
 
 const quoted = (text: string): string => text.replaceAll('"', '\\"')
 
-/** Skills picked in the comment, as chat sends a picked skill: by the file its agent loads. */
-function skillsNote(skills: readonly BotItemCommentSkill[]): string {
+/** Skills picked in the comment (or a group post), as chat sends a picked skill: by the file its
+ *  agent loads. */
+export function skillsNote(skills: readonly BotItemCommentSkill[]): string {
   if (skills.length === 0) {
     return ''
   }

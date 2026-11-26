@@ -73,6 +73,8 @@ export function BotGroupChat({
   const bots = useBots()
 
   const [error, setError] = useState<string | null>(null)
+  // What a command run on a member's session did, said in the room.
+  const [notice, setNotice] = useState<string | null>(null)
   const [sessions, setSessions] = useState<ReadonlyMap<string, BotGroupSession>>(() => new Map())
   const report = useCallback(
     (sessionId: string, session: BotGroupSession | null) =>
@@ -94,6 +96,10 @@ export function BotGroupChat({
     setError
   )
   const group = data?.group ?? found
+  const hostBots = useMemo(
+    () => bots.filter((bot) => bot.hostId === group?.hostId),
+    [bots, group?.hostId]
+  )
   const fileContexts = useBotGroupFileContexts(bots, group, tabId)
   const roomContext = (group && fileContexts.get(group.id)) ?? null
   useBotGroupRoomRead(group?.folderWorkspaceId, isVisible)
@@ -130,10 +136,10 @@ export function BotGroupChat({
     }
     return [...bySession.values()]
   }, [group, bots, messages])
-  const { room, mentionNames, recipientId } = useBotGroupComposerRoom(
+  const { room, mentionNames, recipientId, skillBotId, homeWorktreeId } = useBotGroupComposerRoom(
     `bot-group:${roomId}`,
     group,
-    bots,
+    hostBots,
     (group) => apply({ kind: 'group', group: botGroupRoom(group, threadId) })
   )
   const chosenId = group?.members.find((member) => member.botId === recipientId)?.sessionId
@@ -255,8 +261,14 @@ export function BotGroupChat({
     threadId,
     group,
     chosen,
+    bots: hostBots,
+    recipientId,
+    skillBotId,
+    homeWorktreeId,
+    agent: readers.find((reader) => reader.sessionId === chosenId)?.agent ?? 'claude',
     onSent,
-    onError: setError
+    onError: setError,
+    onNotice: setNotice
   })
   return (
     <NativeChatPaneFileDropSurface className="relative flex h-full min-h-0 min-w-0 w-full">
@@ -355,13 +367,30 @@ export function BotGroupChat({
           paneKey={`bot-group:${roomId}`}
           draftScopeKey={`bot-group:${roomId}`}
           targetPtyId={null}
-          agent={readers.find((reader) => reader.sessionId === chosenId)?.agent ?? 'claude'}
+          agent={
+            hostBots.find((bot) => bot.id === skillBotId)?.agent ??
+            readers.find((reader) => reader.sessionId === chosenId)?.agent ??
+            'claude'
+          }
           structuredTransport={transport}
           room={room}
           isWorking={working}
           canSend={Boolean(group)}
           onStop={() => stop()}
-          notices={error ? [{ key: 'bot-group-error', kind: 'error', text: error }] : []}
+          notices={[
+            ...(error ? [{ key: 'bot-group-error', kind: 'error' as const, text: error }] : []),
+            ...(notice
+              ? [
+                  {
+                    key: 'bot-group-notice',
+                    kind: 'host' as const,
+                    tone: 'muted' as const,
+                    text: notice,
+                    onDismiss: () => setNotice(null)
+                  }
+                ]
+              : [])
+          ]}
         />
       </NativeChatSurface>
     </NativeChatPaneFileDropSurface>

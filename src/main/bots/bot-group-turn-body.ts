@@ -6,6 +6,8 @@ import { botMessageBody, type BotRunFields } from './bot-chat-session'
 import { botGroupPostLabel } from './bot-group-post-label'
 import { BOT_ORCA_CLI } from './bot-preamble'
 import { automationRunMemoryLabel } from './bot-turn-source'
+import { botGroupLeadingCommand } from '../../shared/bots/bot-group-commands'
+import { skillsNote } from './bot-items-mail-text'
 
 export type BotGroupTurnBodyInput = {
   /** The line the turn is on. */
@@ -41,6 +43,26 @@ export function botGroupPostSource(
     : {}
 }
 
+/** A person's post that is one agent command for one member on this computer: that member's own
+ *  message, as the command would be in its chat, so the agent runs it instead of reading it inside
+ *  the room's history. Null for anything else. */
+export function botGroupCommandText(
+  message: BotGroupMessage,
+  original: BotGroupMessage,
+  botName: string
+): string | null {
+  if (
+    message.id !== original.id ||
+    original.author.kind !== 'owner' ||
+    original.automationRun ||
+    original.command !== true ||
+    (original.remoteAsks?.length ?? 0) > 0
+  ) {
+    return null
+  }
+  return botGroupLeadingCommand(original.text, botName)
+}
+
 export function botGroupTurnBody({
   message,
   original,
@@ -63,11 +85,14 @@ export function botGroupTurnBody({
     automationRun && original === message
       ? (run ?? { automationRun, ...botGroupPostSource(original, roomName) })
       : undefined
+  const command = botGroupCommandText(message, original, botName)
   const text = ownRun
     ? `${original.text}\n\n${room}\n\nThe instructions above are your owner's automation ${automation}, which ran here (room message ${original.id}).`
-    : `${room}\n\n${instruction}`
+    : `${command ?? `${room}\n\n${instruction}`}${skillsNote(original.skills ?? [])}`
   return botMessageBody(text, {
     ...(ownRun ?? botGroupPostSource(original, roomName)),
-    images: [...(original.images ?? []), ...(ownRun?.images ?? [])]
+    images: [...(original.images ?? []), ...(ownRun?.images ?? [])],
+    // A hand-off's turn serves the person's post, so it carries the skills that post picked too.
+    skills: original.skills ?? []
   })
 }

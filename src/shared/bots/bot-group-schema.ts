@@ -9,6 +9,10 @@ import { isQuietBotResult, quietBotResultText } from '../bot-quiet-result'
 import { AutomationRunMessageSchema } from '../automations/automation-run-message'
 import { lazyZodSchema } from '../schema/lazy-zod-schema'
 import { BotGroupRemoteMemberSchema, StoredBotFailureSchema } from './bot-group-record-schema'
+import {
+  MAX_SKILL_REFS,
+  SendSkillRef
+} from '../rpc-contract/structured-agent-session/structured-agent-session-message-params'
 
 export {
   BOT_GROUP_THREAD_TITLE_MAX_LENGTH,
@@ -111,6 +115,9 @@ export const BotGroupMessageSchema = lazyZodSchema(() =>
     ]),
     text: z.string(),
     images: z.array(BotGroupMessageImageSchema).optional(),
+    /** Skills the person picked, which each member's turn carries as a chat send does. */
+    skills: z.array(SendSkillRef).max(MAX_SKILL_REFS).optional().catch(undefined),
+    command: z.literal(true).optional(),
     createdAt: z.number(),
     rootRequestId: z.string().optional(),
     rootSequence: z.number().optional(),
