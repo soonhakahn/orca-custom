@@ -5801,7 +5801,7 @@
       "loadEarlierMessages": "Load earlier messages",
       "memberRemoved": "Member removed",
       "composerPlaceholder": "Message the group, @ to mention bots or files",
-      "workspaceFileRemote": "Workspace files can't go to bots on other computers. Remove the file, or mention only bots on this computer.",
+      "filesRemote": "Files can't go to bots on other computers. Remove the files, or mention only bots on this computer.",
       "repliesValue": "Replies: {{value0}}",
       "whoAnswers": "Who answers your messages",
       "peerAsked": "{{from}} asked {{to}}",

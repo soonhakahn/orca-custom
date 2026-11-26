@@ -41,7 +41,6 @@ import { structuredAgentSessionHostSupport } from '../session/native-chat/agent-
 import type { MobileBotGroupSession } from './MobileBotGroupTurns'
 import type { RpcClient } from '../transport/rpc/rpc-client-contract'
 import { MobileNativeChatSendErrorBanner } from '../session/native-chat/status/MobileNativeChatSendErrorBanner'
-import { nativeChatTextWithFileReferences } from '../session/native-chat/composer/attachments/mobile-native-chat-file-attachment'
 import { useMobileBotGroupDraft } from './use-mobile-bot-group-draft'
 import { MobileNativeChatInputLockStatus } from '../session/native-chat/composer/field/MobileNativeChatInputLockStatus'
 import type { MobileNativeChatHostOutage } from '../session/native-chat/status/mobile-native-chat-host-outage'
@@ -128,7 +127,8 @@ export function MobileBotGroupRoom({
       composerDraft,
       client,
       hostCapabilities?.includes(BOTS_GROUP_ATTACHMENTS_RUNTIME_CAPABILITY) === true,
-      setError
+      setError,
+      connected
     )
   const dictation = useMobileBotGroupDictation({
     client,
@@ -285,10 +285,9 @@ export function MobileBotGroupRoom({
             onAttachImage={attachPhotos}
             attachments={[...photos.images]}
             onRemoveAttachment={photos.remove}
-            isAttaching={photos.uploading}
+            isAttaching={photos.uploading || files.attaching}
             roomMentions={roomMentions}
-            roomFiles={files.composer}
-            {...files.workspace}
+            {...files.props}
             roomReplies={
               // The row's free width, so a long name truncates on the +'s line instead of wrapping.
               <View style={styles.repliesSlot}>
@@ -308,13 +307,13 @@ export function MobileBotGroupRoom({
             }
             stop={workingCount > 0 ? { held: false, onStop: () => void stop() } : null}
             onSend={async (text) => {
-              if (!group || files.refusesRemote(text)) {
+              const sentFiles = group ? files.take(text) : null
+              if (!group || !sentFiles) {
                 return false
               }
               composerDraft.clearForSend(text)
               const sent = photos.images
               photos.clearSent(sent.map((image) => image.id))
-              const sentFiles = files.uploaded()
               try {
                 const result = groupSend.interpret(
                   await groupSend.request(client, {
@@ -322,17 +321,17 @@ export function MobileBotGroupRoom({
                     revision: group.revision,
                     threadId,
                     messageId: randomV4Uuid(),
-                    text: nativeChatTextWithFileReferences(text, sentFiles),
+                    text: sentFiles.text(text),
                     ...(sent.length > 0 ? { images: sent.map((image) => image.path) } : {})
                   })
                 )
-                files.clearSent(sentFiles)
                 apply({ kind: 'sent', message: result.message })
                 setError(null)
                 return true
               } catch (error) {
                 composerDraft.restoreRefused(text)
                 photos.returnRefused(sent)
+                sentFiles.restore()
                 setError(botFailureMessage(error) ?? String(error))
                 return false
               }

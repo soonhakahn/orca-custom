@@ -1,16 +1,19 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Bot } from '../../../src/shared/bot-types'
 import type { BotGroup } from '../../../src/shared/bots/bot-group'
-import { resolveRuntimePath } from '../../../src/shared/file-access/cross-platform-path'
 import { formatNativeChatFileReference } from '../../../src/shared/native-chat/input/composer/agent-image-paste'
 import { folderWorkspaceKey } from '../../../src/shared/workspace/identity/workspace-scope'
 import { useMobileNativeChatFileSearch } from '../session/native-chat/composer/attachments/use-mobile-native-chat-file-search'
 import type { RpcClient } from '../transport/rpc/rpc-client-contract'
 import { sessionWorktreeRecordRead } from '../worktree/catalog/session-worktree-record-operations'
+import { botGroupWorkspaceFilePath, botGroupWorkspaceRoot } from './bot-group-workspace-paths'
+
+const NO_PATHS: string[] = []
 
 /** The group composer's `@` files: the home of the bot that answers by default (else the first
  *  member), searched as its own chat searches it. Each member runs in its own home, so a pick is
- *  written as the file's path on the host; null until that home's path is known. */
+ *  written as the file's path on the host, so files list only once that home's path is known; a
+ *  failed read is tried again when `@` next asks for files or the host reconnects. */
 export function useMobileBotGroupWorkspaceFiles(
   client: RpcClient | null,
   group: BotGroup | undefined,
@@ -23,11 +26,14 @@ export function useMobileBotGroupWorkspaceFiles(
   const worktreeId = folderWorkspaceId ? folderWorkspaceKey(folderWorkspaceId) : ''
   const search = useMobileNativeChatFileSearch({ client: worktreeId ? client : null, worktreeId })
   const [home, setHome] = useState<{ worktreeId: string; path: string } | null>(null)
+  const [attempt, setAttempt] = useState(0)
+  const reading = useRef(false)
   useEffect(() => {
     if (!client || !worktreeId) {
       return
     }
     let stale = false
+    reading.current = true
     void sessionWorktreeRecordRead
       .request(client, { worktree: `id:${worktreeId}` })
       .then((response) => {
@@ -38,26 +44,40 @@ export function useMobileBotGroupWorkspaceFiles(
         }
       })
       .catch(() => {})
+      .finally(() => {
+        reading.current = false
+      })
     return () => {
       stale = true
     }
-  }, [client, worktreeId])
+  }, [client, worktreeId, attempt])
   const homePath = home?.worktreeId === worktreeId ? home.path : null
   const { nativeChatFilePaths, loadNativeChatFiles } = search
+  const onNeedFiles = useCallback(
+    (query: string) => {
+      if (!homePath && !reading.current) {
+        setAttempt((count) => count + 1)
+      }
+      loadNativeChatFiles(query)
+    },
+    [homePath, loadNativeChatFiles]
+  )
   return useMemo(
     () =>
-      homePath
+      client && worktreeId
         ? {
             mention: {
-              filePaths: nativeChatFilePaths,
-              onNeedFiles: loadNativeChatFiles,
-              fileReference: (path: string) =>
-                formatNativeChatFileReference(resolveRuntimePath(homePath, path))
+              filePaths: homePath ? nativeChatFilePaths : NO_PATHS,
+              onNeedFiles,
+              fileReference: homePath
+                ? (path: string) =>
+                    formatNativeChatFileReference(botGroupWorkspaceFilePath(homePath, path))
+                : undefined
             },
             /** The home as picks write it, so a send can tell them from other paths. */
-            root: resolveRuntimePath(homePath, '.')
+            root: homePath ? botGroupWorkspaceRoot(homePath) : null
           }
         : null,
-    [homePath, nativeChatFilePaths, loadNativeChatFiles]
+    [client, worktreeId, homePath, nativeChatFilePaths, onNeedFiles]
   )
 }
