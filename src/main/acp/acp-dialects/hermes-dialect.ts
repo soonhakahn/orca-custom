@@ -1,7 +1,7 @@
 import type { ToolCallContent, ToolCallUpdate } from '../generated/acp-protocol.generated'
 import { readAcpPermissionRequest } from '../protocol/acp-permission-requests'
 import { acpPermissionPresentation } from '../requests/acp-timeline-requests'
-import { acpReplyNoticeFailure } from './acp-reply-notice-failure'
+import { acpReplyChunkText, acpReplyNoticeFailure } from './acp-reply-notice-failure'
 import type { AcpCompactionReply, AcpDialect, AcpRequestPresentation } from './acp-dialect'
 
 const TOOL_TITLE = /^([a-z][a-z0-9_]*)(?::\s+([\s\S]+)|$)/u
@@ -13,6 +13,9 @@ const TERMINAL_RESULT =
 const EXIT_CODE_LINE = '\n- **exit_code:** '
 // Hermes' own notice, never the model's words: it opens the reply of a prompt it refused.
 const NO_PROVIDER = /^(?:\u26A0\uFE0F )?Hermes is not connected to any AI provider yet\./u
+// Hermes' gateway appends this after a bare NO_REPLY on local/ACP routes, which Orca judges itself.
+const UNEXPECTED_SILENCE =
+  /^\s*(?:\u26A0\uFE0F )?(?:The model returned only a silence marker for a message that needed a reply\. Try again or rephrase\.|답변이 필요한 메시지에 모델이 무응답 표시만 반환했어요\. 다시 시도하거나 다르게 표현해 보세요\.)\s*$/u
 const COMPRESSION_SKIPPED =
   /^(?:No changes from compression|Compression refused|Nothing to compress|Preview\b)/u
 const COMPRESSION_FAILED = /^(?:\u274C |\u26A0\uFE0F )?Compression (?:aborted|failed)\b/u
@@ -93,8 +96,13 @@ export const HERMES_ACP_DIALECT: AcpDialect = {
   // Titles are `<tool>: <preview>`; the preview is the call's input, not its name.
   toolName: (update) => (update.title ? TOOL_TITLE.exec(update.title)?.[1] : undefined),
   // A signed-out prompt replies with this sentence, then fails with a generic admitted_turn_failed.
-  notification: (method, params) =>
-    acpReplyNoticeFailure(method, params, NO_PROVIDER, { notSignedIn: true }),
+  notification: (method, params) => {
+    const text = acpReplyChunkText(method, params)
+    if (text && UNEXPECTED_SILENCE.test(text)) {
+      return { disposition: 'ignore' }
+    }
+    return acpReplyNoticeFailure(method, params, NO_PROVIDER, { notSignedIn: true })
+  },
   compactCommand: '/compress',
   // Orca's /compact runs /compress, and /reset would empty the session under the chat's transcript.
   withheldCommands: ['compress', 'reset'],

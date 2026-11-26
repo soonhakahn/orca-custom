@@ -9,6 +9,13 @@ const replyTextSchema = z.object({
   })
 })
 
+/** The text of a reply chunk, or undefined for any other update. */
+export function acpReplyChunkText(method: string, params: unknown): string | undefined {
+  return method === 'session/update'
+    ? replyTextSchema.safeParse(params).data?.update.content.text
+    : undefined
+}
+
 /** A reply chunk that is wholly the agent's own failure notice fails the turn in its place. */
 export function acpReplyNoticeFailure(
   method: string,
@@ -18,10 +25,7 @@ export function acpReplyNoticeFailure(
   /** A readable sentence for the notice, its raw words then kept under Details. */
   readable?: (notice: string) => Pick<AcpTurnEnding, 'failureDetail' | 'failureFrame'> | undefined
 ): AcpDialectNotification | undefined {
-  const text =
-    method === 'session/update'
-      ? replyTextSchema.safeParse(params).data?.update.content.text
-      : undefined
+  const text = acpReplyChunkText(method, params)
   if (!text || !notice.test(text)) {
     return undefined
   }
