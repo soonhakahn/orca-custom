@@ -308,7 +308,7 @@ export function MobileBotGroupRoom({
             }
             stop={workingCount > 0 ? { held: false, onStop: () => void stop() } : null}
             onSend={async (text) => {
-              if (!group) {
+              if (!group || files.refusesRemote(text)) {
                 return false
               }
               composerDraft.clearForSend(text)

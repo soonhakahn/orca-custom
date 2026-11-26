@@ -4733,6 +4733,7 @@
     "groups": {
       "group": "그룹",
       "composerPlaceholder": "무엇이든 물어보세요. @로 파일 참조, /로 명령어 실행",
+      "workspaceFileRemote": "워크스페이스 파일은 다른 컴퓨터의 봇에게 보낼 수 없습니다. 파일을 빼거나 이 컴퓨터의 봇만 멘션하세요.",
       "peerTold": "{{from}}이(가) {{to}}에게 알림",
       "items": {
         "emptyTitle": "이 그룹의 항목이 아직 없음",
