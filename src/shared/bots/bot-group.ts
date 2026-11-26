@@ -1,6 +1,7 @@
 import * as z from 'zod'
 import { AGENT_SESSION_MESSAGE_IMAGE_MAX_COUNT } from '../agent-session/agent-session-attachments'
 import { BotNameSchema } from '../bot-types'
+import * as sendParams from '../rpc-contract/structured-agent-session/structured-agent-session-message-params'
 import { agentJournalSubmissionKey } from '../agent-session/journal/agent-session-journal-item-key'
 import type {
   AgentJournalRenderItem,
@@ -136,7 +137,10 @@ export const BotGroupSend = Revision.extend({
   images: z
     .array(z.string().min(1).max(4096))
     .max(AGENT_SESSION_MESSAGE_IMAGE_MAX_COUNT, 'Group messages take up to 20 images.')
-    .optional()
+    .optional(),
+  /** Sent only to a host advertising `BOTS_GROUP_COMMANDS_RUNTIME_CAPABILITY`. */
+  skills: z.array(sendParams.SendSkillRef).min(1).max(sendParams.MAX_SKILL_REFS).optional(),
+  command: z.literal(true).optional()
 }).refine(
   (value) => value.text.length > 0 || (value.images?.length ?? 0) > 0,
   'Message text or image is required.'

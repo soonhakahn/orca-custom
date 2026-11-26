@@ -85,6 +85,7 @@ export function MobileNativeChatComposer({
   filePaths = NO_FILE_PATHS,
   roomMentions,
   roomFiles,
+  roomCommands,
   onNeedFiles,
   fileReference,
   skillDiscovery,
@@ -333,7 +334,13 @@ export function MobileNativeChatComposer({
                 onAttachImage={onAttachImage}
                 onAttachFiles={structured?.onAttachFiles ?? roomFiles?.onAttachFiles}
                 structured={structured !== null}
-                room={roomFiles && { workspaceFiles: onNeedFiles !== undefined }}
+                room={
+                  roomFiles && {
+                    workspaceFiles: onNeedFiles !== undefined,
+                    commands: roomCommands?.commands === true,
+                    skills: roomCommands?.skills === true
+                  }
+                }
                 isAttaching={isAttaching}
                 disabled={disabled || offline}
                 menu={menu}

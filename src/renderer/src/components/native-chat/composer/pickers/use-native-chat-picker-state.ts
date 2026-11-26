@@ -39,6 +39,8 @@ import { useNativeChatPickerDismissal } from './use-native-chat-picker-dismissal
 import { nativeChatFileMentionToken } from './native-chat-file-mention-token'
 import { emitNativeChatPickerItemAccepted } from '@/components/native-chat/telemetry/native-chat-telemetry'
 
+const NO_SKILLS: readonly NativeChatSessionSkill[] = []
+
 export type NativeChatPickerState = {
   autocomplete: ComposerAutocomplete
   listboxId: string
@@ -73,6 +75,7 @@ export function useNativeChatPickerState(args: {
   /** Skill names the running session reports; undefined keeps the host disk scan. */
   commandAvailable?: (name: string) => boolean
   sessionSkills?: readonly NativeChatSessionSkill[]
+  skillsDisabled?: boolean
   /** A room's `@` query may hold spaces while this says a pickable member's name still matches. */
   mentionNameMatches?: (query: string) => boolean
   /** Refresh host catalogs on every / or $ menu opening, even in resting chats. */
@@ -95,7 +98,8 @@ export function useNativeChatPickerState(args: {
     recalledFromHistory,
     disabled,
     isComposing,
-    sessionSkills,
+    sessionSkills: reportedSkills,
+    skillsDisabled = false,
     commandAvailable,
     mentionNameMatches,
     onPickerOpened,
@@ -106,7 +110,11 @@ export function useNativeChatPickerState(args: {
     setCaret,
     setActiveSuggestion
   } = args
-  const profile = useMemo(() => getNativeChatAgentProfile(agent), [agent])
+  const profile = useMemo(
+    () => (skillsDisabled ? null : getNativeChatAgentProfile(agent)),
+    [agent, skillsDisabled]
+  )
+  const sessionSkills = skillsDisabled ? NO_SKILLS : reportedSkills
   const disabledRef = useRef(disabled)
   useLayoutEffect(() => {
     disabledRef.current = disabled

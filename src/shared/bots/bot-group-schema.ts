@@ -7,6 +7,10 @@ import type { AgentJournalRenderItem } from '../agent-session/journal/agent-sess
 import type { NativeChatBlock, NativeChatMessage } from '../native-chat/native-chat-types'
 import { isQuietBotResult, quietBotResultText } from '../bot-quiet-result'
 import { AutomationRunMessageSchema } from '../automations/automation-run-message'
+import {
+  MAX_SKILL_REFS,
+  SendSkillRef
+} from '../rpc-contract/structured-agent-session/structured-agent-session-message-params'
 
 // Read back through readBotFailure, which drops a code this build doesn't know.
 const StoredBotFailureSchema = z
@@ -172,6 +176,9 @@ export const BotGroupMessageSchema = z.object({
   ]),
   text: z.string(),
   images: z.array(BotGroupMessageImageSchema).optional(),
+  /** Skills the person picked, which each member's turn carries as a chat send does. */
+  skills: z.array(SendSkillRef).max(MAX_SKILL_REFS).optional().catch(undefined),
+  command: z.literal(true).optional(),
   createdAt: z.number(),
   rootRequestId: z.string().optional(),
   rootSequence: z.number().optional(),

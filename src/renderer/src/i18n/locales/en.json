@@ -28858,7 +28858,8 @@
       "mentionedCount": "{{count}} mentioned",
       "correctMention": "Correct mention",
       "memberRemoved": "Member removed",
-      "composerPlaceholder": "Message the group, @ to mention a bot",
+      "composerPlaceholder": "Ask anything, @ to mention files, / for commands",
+      "filesRemote": "Files and skills can't go to bots on other computers. Remove them, or mention only bots on this computer.",
       "startAConversationWithThisGroupMentionBots": "Start a conversation with this group. Mention bots with @Name or @everyone.",
       "repliesValue": "Replies: {{value0}}",
       "repliesPrefix": "Replies:",
@@ -28929,7 +28930,14 @@
       },
       "deliveryUnconfirmed": "Delivery unconfirmed",
       "starting": "Starting…",
-      "notStarted": "Not started"
+      "notStarted": "Not started",
+      "commandRan": "Ran {{command}} in {{bot}}’s room session.",
+      "commandsInSessions": "Commands need exactly one bot on this computer and an up-to-date host. Use the bot’s chat for other commands.",
+      "addPhotos": "Photos",
+      "addFiles": "Files (PDF, text, code)",
+      "addWorkspaceFiles": "Workspace files",
+      "addSkills": "Skills",
+      "addCommands": "Commands"
     },
     "google": {
       "turnOn": {

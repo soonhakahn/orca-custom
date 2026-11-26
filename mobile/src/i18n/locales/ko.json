@@ -4733,7 +4733,7 @@
     "groups": {
       "group": "그룹",
       "composerPlaceholder": "무엇이든 물어보세요. @로 파일 참조, /로 명령어 실행",
-      "filesRemote": "파일은 다른 컴퓨터의 봇에게 보낼 수 없습니다. 파일을 빼거나 이 컴퓨터의 봇만 멘션하세요.",
+      "filesRemote": "파일과 스킬은 다른 컴퓨터의 봇에게 보낼 수 없습니다. 빼거나 이 컴퓨터의 봇만 멘션하세요.",
       "peerTold": "{{from}}이(가) {{to}}에게 알림",
       "items": {
         "emptyTitle": "이 그룹의 항목이 아직 없음",
@@ -4750,7 +4750,9 @@
       "newThread": "{{name}}의 새 스레드",
       "handoffsPaused": "인계 {{count}}회 후 일시 중지되었습니다. 계속하려면 답장하세요.",
       "stopCouldNotBeConfirmed": "중지를 확인할 수 없습니다.",
-      "notStarted": "시작하지 않음"
+      "notStarted": "시작하지 않음",
+      "commandRan": "{{bot}}의 그룹 대화 세션에서 {{command}} 명령어를 실행했습니다.",
+      "commandsInSessions": "명령어는 최신 호스트의 로컬 봇 한 명에게만 실행할 수 있습니다. 다른 명령어는 봇의 개별 대화에서 실행하세요."
     },
     "templates": {
       "title": "봇 템플릿",

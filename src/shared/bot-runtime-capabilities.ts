@@ -69,6 +69,11 @@ export const BOTS_SLACK_ICON_RUNTIME_CAPABILITY = 'bots.slack-icon.v1' as const
 // and delivers them as image blocks to addressed members; an older host takes text only.
 export const BOTS_GROUP_ATTACHMENTS_RUNTIME_CAPABILITY = 'bots.group-attachments.v1' as const
 
+// Host hands a group post's picked skills (bots.groups.send `skills`) to its members' turns as a chat
+// send carries them, and runs a post that is one agent command for one local member as that member's
+// own message, unwrapped; an older host takes neither, so a `/command` arrives as room text.
+export const BOTS_GROUP_COMMANDS_RUNTIME_CAPABILITY = 'bots.group-commands.v1' as const
+
 // Host keeps each bot's Home pinned first and its side chats unpinned in what it serves; an older host
 // leaves pins to each client, so a client shows the Home rule only where this is advertised.
 export const BOTS_HOME_PIN_RUNTIME_CAPABILITY = 'bots.home-pin.v1' as const
@@ -97,6 +102,7 @@ export const BOTS_GOOGLE_PHONE_SIGN_IN_RUNTIME_CAPABILITY = 'bots.google-phone-s
 export const BOT_RUNTIME_CAPABILITIES = [
   BOTS_GROUPS_RUNTIME_CAPABILITY,
   BOTS_GROUP_ATTACHMENTS_RUNTIME_CAPABILITY,
+  BOTS_GROUP_COMMANDS_RUNTIME_CAPABILITY,
   BOTS_MOBILE_RUNTIME_CAPABILITY,
   BOTS_SLACK_ICON_RUNTIME_CAPABILITY,
   BOTS_CREATE_RUNTIME_CAPABILITY,

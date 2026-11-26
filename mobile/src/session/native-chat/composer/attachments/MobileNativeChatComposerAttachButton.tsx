@@ -23,8 +23,9 @@ export function MobileNativeChatComposerAttachButton({
   onAttachImage: (() => void) | undefined
   onAttachFiles: (() => void) | undefined
   structured: boolean
-  /** A room's sheet: photos, files and, when it searches one, workspace files; never skills or commands. */
-  room?: { workspaceFiles: boolean }
+  /** A room's sheet: photos, files and, when it searches one, workspace files; skills and commands
+   *  only for the one bot its draft reaches. */
+  room?: { workspaceFiles: boolean; commands: boolean; skills: boolean }
   isAttaching: boolean
   disabled: boolean
   /** A structured chat's add-to-message sheet; without it the button opens the photo library. */
@@ -69,8 +70,8 @@ export function MobileNativeChatComposerAttachButton({
             onPhotos: onAttachImage,
             onFiles: onAttachFiles,
             onWorkspaceFile: !room || room.workspaceFiles ? sheet.openFileMenu : undefined,
-            onSkills: room ? undefined : () => sheet.openSlashMenu('skill'),
-            onCommands: room ? undefined : () => sheet.openSlashMenu('command'),
+            onSkills: room && !room.skills ? undefined : () => sheet.openSlashMenu('skill'),
+            onCommands: room && !room.commands ? undefined : () => sheet.openSlashMenu('command'),
             skillCount: sheet.skillCount
           })}
         />

@@ -6,7 +6,10 @@ import { folderWorkspaceKey } from '../../../src/shared/workspace/identity/works
 import { useMobileNativeChatFileSearch } from '../session/native-chat/composer/attachments/use-mobile-native-chat-file-search'
 import type { RpcClient } from '../transport/rpc/rpc-client-contract'
 import { sessionWorktreeRecordRead } from '../worktree/catalog/session-worktree-record-operations'
-import { botGroupWorkspaceFilePath, botGroupWorkspaceRoot } from './bot-group-workspace-paths'
+import {
+  botGroupWorkspaceBotId,
+  botGroupWorkspaceFilePath
+} from '../../../src/shared/bots/bot-group-workspace-paths'
 
 const NO_PATHS: string[] = []
 
@@ -17,11 +20,12 @@ const NO_PATHS: string[] = []
 export function useMobileBotGroupWorkspaceFiles(
   client: RpcClient | null,
   group: BotGroup | undefined,
-  bots: readonly Pick<Bot, 'id' | 'folderWorkspaceId'>[]
+  bots: readonly Pick<Bot, 'id' | 'folderWorkspaceId'>[],
+  recipientId?: string | null
 ) {
-  const replier = group?.replyMode.kind === 'bot' ? group.replyMode.botId : undefined
-  const botId =
-    group?.members.find((member) => member.botId === replier)?.botId ?? group?.members[0]?.botId
+  const botId = group?.members.some((member) => member.botId === recipientId)
+    ? recipientId
+    : botGroupWorkspaceBotId(group)
   const folderWorkspaceId = bots.find((bot) => bot.id === botId)?.folderWorkspaceId
   const worktreeId = folderWorkspaceId ? folderWorkspaceKey(folderWorkspaceId) : ''
   const search = useMobileNativeChatFileSearch({ client: worktreeId ? client : null, worktreeId })
@@ -66,16 +70,12 @@ export function useMobileBotGroupWorkspaceFiles(
     () =>
       client && worktreeId
         ? {
-            mention: {
-              filePaths: homePath ? nativeChatFilePaths : NO_PATHS,
-              onNeedFiles,
-              fileReference: homePath
-                ? (path: string) =>
-                    formatNativeChatFileReference(botGroupWorkspaceFilePath(homePath, path))
-                : undefined
-            },
-            /** The home as picks write it, so a send can tell them from other paths. */
-            root: homePath ? botGroupWorkspaceRoot(homePath) : null
+            filePaths: homePath ? nativeChatFilePaths : NO_PATHS,
+            onNeedFiles,
+            fileReference: homePath
+              ? (path: string) =>
+                  formatNativeChatFileReference(botGroupWorkspaceFilePath(homePath, path))
+              : undefined
           }
         : null,
     [client, worktreeId, homePath, nativeChatFilePaths, onNeedFiles]

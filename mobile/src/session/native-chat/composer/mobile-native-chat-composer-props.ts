@@ -64,6 +64,8 @@ export type MobileNativeChatComposerProps = MobileNativeChatMicProps & {
     onAttachFiles: () => void
     onRemoveFile: (id: string) => void
   }
+  /** A room's + sheet also lists Skills and Commands, for the one bot its draft reaches. */
+  roomCommands?: { skills: boolean; commands: boolean }
   onNeedFiles?: (query: string) => void
   /** How a picked file is written when the chat runs in a workspace sub-folder; absent keeps the
    *  workspace-relative default. */
