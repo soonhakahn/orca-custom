@@ -14,7 +14,8 @@ export function createLocalBuildVersion(baseVersion, timestamp, commit) {
     throw new Error('Git commit identity is empty.')
   }
   const suffix = `local.${timestamp}.${sanitizedCommit}`
-  return baseVersion.includes('-') ? `${baseVersion}.${suffix}` : `${baseVersion}-${suffix}`
+  // Build metadata keeps local identity without making the matching official release an update.
+  return `${baseVersion}+${suffix}`
 }
 
 export function getLocalBuildIdentity() {
