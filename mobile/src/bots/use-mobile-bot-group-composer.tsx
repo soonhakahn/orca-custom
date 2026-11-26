@@ -14,6 +14,7 @@ import type { RpcClient } from '../transport/rpc/rpc-client-contract'
 import { useBotDraftImages } from './use-bot-draft-images'
 import { useMobileNativeChatFileAttachments } from '../session/native-chat/composer/attachments/use-mobile-native-chat-file-attachments'
 import { useMobileBotGroupWorkspaceFiles } from './use-mobile-bot-group-workspace-files'
+import { sendsWorkspaceFileToRemote } from './bot-group-workspace-file-guard'
 
 /** The group composer's `@` members, the room's faces, who the draft reaches, the one bot that would
  *  answer, and its photos and files, which reach the bots as a chat's do: `@path`s in the words. */
@@ -95,7 +96,22 @@ export function useMobileBotGroupComposer(
         }
       : undefined,
     /** Where `@` finds workspace files, or nothing while that home's path is unknown. */
-    workspace: workspace ?? {},
+    workspace: workspace?.mention ?? {},
+    /** Says why and refuses when `text` hands a workspace path to a bot on a paired computer. */
+    refusesRemote: (text: string) => {
+      const refused =
+        group !== undefined &&
+        sendsWorkspaceFileToRemote(text, group, bots, workspace?.root ?? null)
+      if (refused) {
+        onError(
+          t(
+            'bots.groups.workspaceFileRemote',
+            "Workspace files can't go to bots on other computers. Remove the file, or mention only bots on this computer."
+          )
+        )
+      }
+      return refused
+    },
     /** The uploaded files a send carries, which ride as `@path`s as a chat's do. */
     uploaded: () =>
       attached.files.flatMap((file) => (file.path ? [{ ...file, path: file.path }] : [])),

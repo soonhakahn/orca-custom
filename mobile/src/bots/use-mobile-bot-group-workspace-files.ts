@@ -48,10 +48,14 @@ export function useMobileBotGroupWorkspaceFiles(
     () =>
       homePath
         ? {
-            filePaths: nativeChatFilePaths,
-            onNeedFiles: loadNativeChatFiles,
-            fileReference: (path: string) =>
-              formatNativeChatFileReference(resolveRuntimePath(homePath, path))
+            mention: {
+              filePaths: nativeChatFilePaths,
+              onNeedFiles: loadNativeChatFiles,
+              fileReference: (path: string) =>
+                formatNativeChatFileReference(resolveRuntimePath(homePath, path))
+            },
+            /** The home as picks write it, so a send can tell them from other paths. */
+            root: resolveRuntimePath(homePath, '.')
           }
         : null,
     [homePath, nativeChatFilePaths, loadNativeChatFiles]
