@@ -23,7 +23,7 @@ import {
   disposeGrabModeStateForPage,
   resetGrabModeState
 } from './browser-grab-ipc'
-import { registerBrowserSessionProfileHandlers } from './browser-session-profile-ipc'
+import { registerLazyBrowserSessionProfileHandlers } from './lazy-browser-session-profile-ipc'
 import type { BrowserCertificateProceedResult } from '../../../shared/browser/workspaces/browser-workspace-types'
 import {
   cancelBrowserWebAuthnAccountRequests,
@@ -320,7 +320,7 @@ export function registerBrowserHandlers(
 
   registerBrowserGrabHandlers()
 
-  registerBrowserSessionProfileHandlers()
+  registerLazyBrowserSessionProfileHandlers()
 
   registerBrowserExtensionHandlers()
   registerBrowserExtensionContextMenuHandlers()
